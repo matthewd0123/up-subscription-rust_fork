@@ -40,7 +40,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let subscription_request = SubscriptionRequest {
             topic: Some(topic).into(),
@@ -155,7 +155,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let unsubscribe_request = UnsubscribeRequest {
             topic: Some(topic).into(),
@@ -265,7 +265,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let notification_request = NotificationsRequest {
             topic: Some(topic.clone()).into(),
@@ -287,7 +287,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let notification_request = NotificationsRequest {
             topic: Some(test_lib::helpers::notification_topic_uri()).into(),
@@ -308,7 +308,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let notification_request = NotificationsRequest::default();
 
@@ -326,7 +326,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let notification_request = NotificationsRequest {
             topic: Some(test_lib::helpers::local_topic1_uri()).into(),
@@ -347,7 +347,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let fetch_subscribers_request = FetchSubscribersRequest {
             topic: Some(UUri::default()).into(),
@@ -402,7 +402,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(subscriptions.len());
 
         for subscription_request in subscriptions {
             let _ = usubscription.subscribe(subscription_request).await;
@@ -430,7 +430,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(0);
 
         let fetch_subscriptions_request = FetchSubscriptionsRequest {
             request: Some(request),
@@ -528,7 +528,7 @@ mod tests {
         test_lib::before_test();
 
         // Prepare things
-        let usubscription = test_lib::mocks::usubscription_default_mock();
+        let usubscription = test_lib::mocks::usubscription_default_mock(subscriptions.len());
 
         for subscription_request in subscriptions {
             let _ = usubscription.subscribe(subscription_request).await;

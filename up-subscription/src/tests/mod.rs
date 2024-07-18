@@ -13,4 +13,5 @@
 
 pub(crate) mod test_lib;
 
+mod subscription_manager_tests;
 mod usubscription_tests;

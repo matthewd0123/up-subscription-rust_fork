@@ -230,8 +230,13 @@ pub(crate) mod mocks {
         }
     }
 
-    pub(crate) fn usubscription_default_mock() -> USubscriptionService {
-        let mock_transport = test_lib::mocks::MockTransport::default();
+    pub(crate) fn usubscription_default_mock(do_send_count: usize) -> USubscriptionService {
+        let mut mock_transport = test_lib::mocks::MockTransport::default();
+        mock_transport
+            .expect_do_send()
+            .times(do_send_count)
+            .return_const(Ok(()));
+
         let mock_client = test_lib::mocks::MockRpcClientMock::default();
         USubscriptionService::new(
             None,
