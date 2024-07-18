@@ -40,6 +40,4 @@ mockall = { version = "0.12" }
 protobuf = { version = "3.4" }
 test-case = { version = "3.3" }
 tokio = { version = "1", features = ["full"] }
-up-rust = { git = "https://github.com/eclipse-uprotocol/up-rust", rev = "75d25e2500a583a0bd3754baa3a491f25eb0c5ea", features = [
-    "usubscription",
-] }
+up-rust = { version = "0.1.2", features = ["usubscription"] }

@@ -287,6 +287,11 @@ pub(crate) mod helpers {
     const SUBSCRIBER2_ID: u32 = 0x0000_2000;
     const SUBSCRIBER2_VERSION: u32 = 0x0000_0001;
     const SUBSCRIBER2_RESOURCE: u32 = 0x0000_1000;
+
+    const SUBSCRIBER3_ID: u32 = 0x0000_3000;
+    const SUBSCRIBER3_VERSION: u32 = 0x0000_0001;
+    const SUBSCRIBER3_RESOURCE: u32 = 0x0000_1000;
+
     const NOTIFICATION_TOPIC_ID: u32 = 0x001_0000;
     const NOTIFICATION_TOPIC_VERSION: u32 = 0x0000_0001;
     const NOTIFICATION_TOPIC_RESOURCE: u32 = 0x0000_8001;
@@ -326,6 +331,20 @@ pub(crate) mod helpers {
                 ue_id: SUBSCRIBER2_ID,
                 ue_version_major: SUBSCRIBER2_VERSION,
                 resource_id: SUBSCRIBER2_RESOURCE,
+                ..Default::default()
+            })
+            .into(),
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn subscriber_info3() -> SubscriberInfo {
+        SubscriberInfo {
+            uri: Some(UUri {
+                authority_name: String::default(),
+                ue_id: SUBSCRIBER3_ID,
+                ue_version_major: SUBSCRIBER3_VERSION,
+                resource_id: SUBSCRIBER3_RESOURCE,
                 ..Default::default()
             })
             .into(),
