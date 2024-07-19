@@ -37,10 +37,6 @@ mod tests {
     use crate::usubscription_manager::{
         handle_message, make_remote_subscribe_uuri, make_remote_unsubscribe_uuri, SubscriptionEvent,
     };
-    use crate::usubscription_uris::{
-        UP_SUBSCRIBE_ID, UP_UNSUBSCRIBE_ID, USUBSCRIPTION_SERVICE_ID,
-        USUBSCRIPTION_SERVICE_VERSION_MAJOR,
-    };
     use crate::{helpers, test_lib};
 
     // Simple subscription-manager-actor front-end to use for testing
@@ -826,33 +822,5 @@ mod tests {
             assert_eq!(subscription.topic.unwrap(), desired_topic);
             assert!(expected_subscribers.contains(&subscription.subscriber.unwrap()));
         }
-    }
-
-    #[test]
-    fn test_make_remote_subscribe_uuri() {
-        let expected_uri = UUri {
-            authority_name: test_lib::helpers::remote_topic1_uri().authority_name,
-            ue_id: USUBSCRIPTION_SERVICE_ID,
-            ue_version_major: USUBSCRIPTION_SERVICE_VERSION_MAJOR,
-            resource_id: UP_SUBSCRIBE_ID as u32,
-            ..Default::default()
-        };
-        let remote_method = make_remote_subscribe_uuri(&test_lib::helpers::remote_topic1_uri());
-
-        assert_eq!(expected_uri, remote_method);
-    }
-
-    #[test]
-    fn test_make_remote_unsubscribe_uuri() {
-        let expected_uri = UUri {
-            authority_name: test_lib::helpers::remote_topic1_uri().authority_name,
-            ue_id: USUBSCRIPTION_SERVICE_ID,
-            ue_version_major: USUBSCRIPTION_SERVICE_VERSION_MAJOR,
-            resource_id: UP_UNSUBSCRIBE_ID as u32,
-            ..Default::default()
-        };
-        let remote_method = make_remote_unsubscribe_uuri(&test_lib::helpers::remote_topic1_uri());
-
-        assert_eq!(expected_uri, remote_method);
     }
 }

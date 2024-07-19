@@ -538,3 +538,187 @@ pub(crate) fn make_remote_unsubscribe_uuri(uri: &UUri) -> UUri {
         ..Default::default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    // These are tests just for the locally used helper functions of subscription manager. More complex and complete
+    // tests of the susbcription manager business logic are located in tests/subscription_manager_tests.rs
+
+    use super::*;
+    use protobuf::MessageFull;
+
+    use up_rust::communication::UPayload;
+
+    use crate::test_lib::{self, mocks::MockRpcClientMock};
+
+    fn get_client_mock<R: MessageFull, S: MessageFull>(
+        expected_method: UUri,
+        expected_options: CallOptions,
+        expected_request: R,
+        expected_response: S,
+    ) -> MockRpcClientMock {
+        let mut client_mock = MockRpcClientMock::new();
+
+        let expected_request_payload = UPayload::try_from_protobuf(expected_request).unwrap();
+        let expected_response_payload = UPayload::try_from_protobuf(expected_response).unwrap();
+
+        client_mock
+            .expect_invoke_method()
+            .once()
+            .withf(move |method, options, payload| {
+                *method == expected_method
+                    && test_lib::is_equivalent_calloptions(options, &expected_options)
+                    && *payload == Some(expected_request_payload.clone())
+            })
+            .return_const(Ok(Some(expected_response_payload)));
+
+        client_mock
+    }
+
+    #[tokio::test]
+    async fn test_remote_subscribe() {
+        test_lib::before_test();
+
+        // prepare things
+        let expected_topic = test_lib::helpers::remote_topic1_uri();
+        let expected_method = make_remote_subscribe_uuri(&expected_topic);
+        let expected_subscriber = test_lib::helpers::local_usubscription_service_uri();
+
+        let expected_options = CallOptions::for_rpc_request(
+            UP_REMOTE_TTL,
+            Some(UUID::new()),
+            None,
+            Some(UPriority::UPRIORITY_CS2),
+        );
+        let expected_request = SubscriptionRequest {
+            topic: Some(expected_topic.clone()).into(),
+            subscriber: Some(SubscriberInfo {
+                uri: Some(expected_subscriber).into(),
+                ..Default::default()
+            })
+            .into(),
+            ..Default::default()
+        };
+        let expected_response = SubscriptionResponse {
+            topic: Some(expected_topic.clone()).into(),
+            status: Some(SubscriptionStatus {
+                state: State::SUBSCRIBED.into(),
+                ..Default::default()
+            })
+            .into(),
+            ..Default::default()
+        };
+
+        let (sender, mut receiver) = mpsc::unbounded_channel::<RemoteSubscriptionEvent>();
+
+        // perform operation to test
+        let result = remote_subscribe(
+            test_lib::helpers::local_usubscription_service_uri(),
+            expected_topic.clone(),
+            Arc::new(get_client_mock(
+                expected_method,
+                expected_options,
+                expected_request,
+                expected_response,
+            )),
+            sender,
+        )
+        .await;
+
+        // validate response
+        assert!(result.is_ok());
+        let response = receiver.recv().await;
+        assert!(response.is_some());
+        match response.unwrap() {
+            RemoteSubscriptionEvent::RemoteSubscriptionStateUpdate { topic, state } => {
+                assert_eq!(topic, expected_topic);
+                assert_eq!(state, State::SUBSCRIBED);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_remote_unsubscribe() {
+        test_lib::before_test();
+
+        // prepare things
+        let expected_topic = test_lib::helpers::remote_topic1_uri();
+        let expected_method = make_remote_unsubscribe_uuri(&expected_topic);
+        let expected_subscriber = test_lib::helpers::local_usubscription_service_uri();
+
+        let expected_options = CallOptions::for_rpc_request(
+            UP_REMOTE_TTL,
+            Some(UUID::new()),
+            None,
+            Some(UPriority::UPRIORITY_CS2),
+        );
+        let expected_request = UnsubscribeRequest {
+            topic: Some(expected_topic.clone()).into(),
+            subscriber: Some(SubscriberInfo {
+                uri: Some(expected_subscriber).into(),
+                ..Default::default()
+            })
+            .into(),
+            ..Default::default()
+        };
+        let expected_response = UStatus {
+            code: UCode::OK.into(),
+            ..Default::default()
+        };
+
+        let (sender, mut receiver) = mpsc::unbounded_channel::<RemoteSubscriptionEvent>();
+
+        // perform operation to test
+        let result = remote_unsubscribe(
+            test_lib::helpers::local_usubscription_service_uri(),
+            expected_topic.clone(),
+            Arc::new(get_client_mock(
+                expected_method,
+                expected_options,
+                expected_request,
+                expected_response,
+            )),
+            sender,
+        )
+        .await;
+
+        // validate response
+        assert!(result.is_ok());
+        let response = receiver.recv().await;
+        assert!(response.is_some());
+        match response.unwrap() {
+            RemoteSubscriptionEvent::RemoteSubscriptionStateUpdate { topic, state } => {
+                assert_eq!(topic, expected_topic);
+                assert_eq!(state, State::UNSUBSCRIBED);
+            }
+        }
+    }
+
+    #[test]
+    fn test_make_remote_subscribe_uuri() {
+        let expected_uri = UUri {
+            authority_name: test_lib::helpers::remote_topic1_uri().authority_name,
+            ue_id: USUBSCRIPTION_SERVICE_ID,
+            ue_version_major: USUBSCRIPTION_SERVICE_VERSION_MAJOR,
+            resource_id: UP_SUBSCRIBE_ID as u32,
+            ..Default::default()
+        };
+        let remote_method = make_remote_subscribe_uuri(&test_lib::helpers::remote_topic1_uri());
+
+        assert_eq!(expected_uri, remote_method);
+    }
+
+    #[test]
+    fn test_make_remote_unsubscribe_uuri() {
+        let expected_uri = UUri {
+            authority_name: test_lib::helpers::remote_topic1_uri().authority_name,
+            ue_id: USUBSCRIPTION_SERVICE_ID,
+            ue_version_major: USUBSCRIPTION_SERVICE_VERSION_MAJOR,
+            resource_id: UP_UNSUBSCRIBE_ID as u32,
+            ..Default::default()
+        };
+        let remote_method = make_remote_unsubscribe_uuri(&test_lib::helpers::remote_topic1_uri());
+
+        assert_eq!(expected_uri, remote_method);
+    }
+}
