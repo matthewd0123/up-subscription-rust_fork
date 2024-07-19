@@ -95,6 +95,8 @@ impl USubscriptionService {
         up_transport: Arc<dyn UTransport>,
         up_client: Arc<dyn RpcClient>,
     ) -> USubscriptionService {
+        helpers::init_once();
+
         // Set up subscription manager actor
         let up_client_cloned = up_client.clone();
         let own_uri_cloned = own_uri.clone();

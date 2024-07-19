@@ -104,7 +104,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_notifyee() {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new(vec![]);
 
         let expected_subscriber = test_lib::helpers::subscriber_info1().uri.unwrap();
@@ -131,7 +131,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_remove_notifyee() {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new(vec![]);
 
         // prepare things
@@ -165,7 +165,7 @@ mod tests {
     // This test expects a state change notification to be send to the generic Notification Update channel
     #[tokio::test]
     async fn test_state_change() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // prepare things
         // this is the status&topic&subscriber that the notification is about
@@ -208,7 +208,7 @@ mod tests {
     // as well as to the custom notification topics registered by susbcribers who like things complicated.
     #[tokio::test]
     async fn test_state_change_custom() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // prepare things
         // this is the status&topic&subscriber that the notification is about

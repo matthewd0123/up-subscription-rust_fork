@@ -73,13 +73,13 @@ mod tests {
 
     use super::*;
     use crate::usubscription;
-    use crate::{tests::test_lib, usubscription_uris::*};
+    use crate::{helpers, tests::test_lib, usubscription_uris::*};
 
     // Test for two cases: 1) handling a usubscription Ok() Result, or 2) handling a usubscription Err() Result
 
     #[tokio::test]
     async fn test_unsubscribe_listener_success() {
-        test_lib::before_test();
+        helpers::init_once();
         let unsubscribe_uri = UUri {
             authority_name: String::from("usubscription.mock"),
             ue_id: USUBSCRIPTION_SERVICE_ID,
@@ -129,7 +129,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unsubscribe_listener_failure() {
-        test_lib::before_test();
+        helpers::init_once();
         let unsubscribe_uri = UUri {
             authority_name: String::from("usubscription.mock"),
             ue_id: USUBSCRIPTION_SERVICE_ID,

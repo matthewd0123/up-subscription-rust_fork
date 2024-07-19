@@ -218,7 +218,7 @@ mod tests {
          ]; "Multiple susbcriber-topic combinations")]
     #[tokio::test]
     async fn test_subscribe(topic_subscribers: Vec<(UUri, SubscriberInfo)>) {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // Prepare things
@@ -252,7 +252,7 @@ mod tests {
     #[test_case(test_lib::helpers::remote_topic1_uri(), State::SUBSCRIBED; "Remote topic, remote state SUBSCRIBED")]
     #[tokio::test]
     async fn test_remote_subscribe(remote_topic: UUri, remote_state: State) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let remote_method = make_remote_subscribe_uuri(&remote_topic);
@@ -319,7 +319,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_repeated_remote_subscribe() {
-        test_lib::before_test();
+        helpers::init_once();
         let remote_topic = test_lib::helpers::remote_topic1_uri();
 
         // Prepare things
@@ -390,7 +390,7 @@ mod tests {
     // All subscribers for a topic unsubscribe
     #[tokio::test]
     async fn test_final_unsubscribe() {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // Prepare things
@@ -431,7 +431,7 @@ mod tests {
     // Only some subscribers of a topic unsubscribe
     #[tokio::test]
     async fn test_partial_unsubscribe() {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // Prepare things
@@ -484,7 +484,7 @@ mod tests {
     // All subscribers for a remote topic unsubscribe
     #[tokio::test]
     async fn test_final_remote_unsubscribe() {
-        test_lib::before_test();
+        helpers::init_once();
         let remote_topic = test_lib::helpers::remote_topic1_uri();
 
         // Prepare things
@@ -575,7 +575,7 @@ mod tests {
     // Some subscribers for a remote topic unsubscribe, but at least one subscriber is left
     #[tokio::test]
     async fn test_partial_remote_unsubscribe() {
-        test_lib::before_test();
+        helpers::init_once();
         let remote_topic = test_lib::helpers::remote_topic1_uri();
 
         // Prepare things - we're not expecting any remote-unsubscribe action in this case
@@ -644,7 +644,7 @@ mod tests {
     #[test_case(Some(2); "Offset 2")]
     #[tokio::test]
     async fn test_fetch_subscribers(offset: Option<u32>) {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // set starting state
@@ -701,7 +701,7 @@ mod tests {
     #[test_case(Some(2); "Offset 2")]
     #[tokio::test]
     async fn test_fetch_subscriptions_by_subscriber(offset: Option<u32>) {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // set starting state
@@ -770,7 +770,7 @@ mod tests {
     #[test_case(Some(2); "Offset 2")]
     #[tokio::test]
     async fn test_fetch_subscriptions_by_topic(offset: Option<u32>) {
-        test_lib::before_test();
+        helpers::init_once();
         let command_sender = CommandSender::new();
 
         // set starting state

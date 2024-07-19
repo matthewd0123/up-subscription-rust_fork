@@ -104,6 +104,8 @@ pub(crate) async fn handle_message(
     up_client: Arc<dyn RpcClient>,
     mut command_receiver: UnboundedReceiver<SubscriptionEvent>,
 ) {
+    helpers::init_once();
+
     // track subscribers for topics - if you're in this list, you have SUBSCRIBED, otherwise you're considered UNSUBSCRIBED
     #[allow(clippy::mutable_key_type)]
     let mut topic_subscribers: HashMap<UUri, HashSet<SubscriberInfo>> = HashMap::new();
@@ -171,10 +173,15 @@ pub(crate) async fn handle_message(
                             });
                         }
                     }
-                    let _ = respond_to.send(SubscriptionStatus {
-                        state: state.into(),
-                        ..Default::default()
-                    });
+                    if respond_to
+                        .send(SubscriptionStatus {
+                            state: state.into(),
+                            ..Default::default()
+                        })
+                        .is_err()
+                    {
+                        error!("Problem with internal communication");
+                    }
                 }
                 SubscriptionEvent::RemoveSubscription {
                     subscriber,
@@ -218,11 +225,16 @@ pub(crate) async fn handle_message(
                         topic_subscribers.remove(&topic);
                     }
 
-                    let _ = respond_to.send(SubscriptionStatus {
-                        // Whatever happens with the remote topic state - as far as the local client is concerned, it has now UNSUBSCRIBED from this topic
-                        state: State::UNSUBSCRIBED.into(),
-                        ..Default::default()
-                    });
+                    if respond_to
+                        .send(SubscriptionStatus {
+                            // Whatever happens with the remote topic state - as far as the local client is concerned, it has now UNSUBSCRIBED from this topic
+                            state: State::UNSUBSCRIBED.into(),
+                            ..Default::default()
+                        })
+                        .is_err()
+                    {
+                        error!("Problem with internal communication");
+                    }
                 }
                 SubscriptionEvent::FetchSubscribers {
                     request,
@@ -246,13 +258,21 @@ pub(crate) async fn handle_message(
                             has_more = true;
                         }
 
-                        let _ = respond_to.send(FetchSubscribersResponse {
-                            subscribers: subscribers.iter().map(|s| (*s).clone()).collect(),
-                            has_more_records: has_more.into(),
-                            ..Default::default()
-                        });
-                    } else {
-                        let _ = respond_to.send(FetchSubscribersResponse::default());
+                        if respond_to
+                            .send(FetchSubscribersResponse {
+                                subscribers: subscribers.iter().map(|s| (*s).clone()).collect(),
+                                has_more_records: has_more.into(),
+                                ..Default::default()
+                            })
+                            .is_err()
+                        {
+                            error!("Problem with internal communication");
+                        }
+                    } else if respond_to
+                        .send(FetchSubscribersResponse::default())
+                        .is_err()
+                    {
+                        error!("Problem with internal communication");
                     }
                 }
                 SubscriptionEvent::FetchSubscriptions {
@@ -262,7 +282,6 @@ pub(crate) async fn handle_message(
                     let FetchSubscriptionsRequest {
                         request, offset, ..
                     } = request;
-                    debug!("BEGIN");
                     let mut fetch_subscriptions_response = FetchSubscriptionsResponse::default();
 
                     if let Some(request) = request {
@@ -361,11 +380,13 @@ pub(crate) async fn handle_message(
                                 }
                             }
                             _ => {
-                                // This really shouldn't happen - also compare input validation in usubscription.rs
+                                error!("Invalid Request object - this really should not happen")
                             }
                         }
                     }
-                    let _ = respond_to.send(fetch_subscriptions_response);
+                    if respond_to.send(fetch_subscriptions_response).is_err() {
+                        error!("Problem with internal communication");
+                    };
                 }
                 #[cfg(test)]
                 SubscriptionEvent::GetTopicSubscribers { respond_to } => {
@@ -577,7 +598,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_remote_subscribe() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // prepare things
         let expected_topic = test_lib::helpers::remote_topic1_uri();
@@ -639,7 +660,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_remote_unsubscribe() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // prepare things
         let expected_topic = test_lib::helpers::remote_topic1_uri();

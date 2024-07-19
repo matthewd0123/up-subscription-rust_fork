@@ -28,6 +28,7 @@ mod tests {
     };
 
     use crate::{
+        helpers,
         test_lib::{self},
         usubscription_uris, USubscriptionService,
     };
@@ -37,7 +38,7 @@ mod tests {
     #[test_case(UUri::default(), test_lib::helpers::subscriber_info1(); "Default topic, good SubscriberInfo")]
     #[tokio::test]
     async fn test_subscribe_input_validation(topic: UUri, subscriber: SubscriberInfo) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -59,7 +60,7 @@ mod tests {
     #[test_case(test_lib::helpers::remote_topic1_uri(), State::SUBSCRIBE_PENDING; "Remote topic")]
     #[tokio::test]
     async fn test_subscribe(topic: UUri, state: State) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let (mock_transport, mut notification_receiver) =
@@ -152,7 +153,7 @@ mod tests {
     #[test_case(UUri::default(), test_lib::helpers::subscriber_info1(); "Default topic, good SubscriberInfo")]
     #[tokio::test]
     async fn test_unsubscribe_input_validation(topic: UUri, subscriber: SubscriberInfo) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -174,7 +175,7 @@ mod tests {
     #[test_case(test_lib::helpers::remote_topic1_uri(); "Remote topic")]
     #[tokio::test]
     async fn test_unsubscribe(topic: UUri) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let (mock_transport, mut notification_receiver) =
@@ -262,7 +263,7 @@ mod tests {
         topic: UUri,
         subscriber: SubscriberInfo,
     ) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -284,7 +285,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_register_for_notifications() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -305,7 +306,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unregister_for_notifications_input_validation() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -323,7 +324,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unregister_for_notifications() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -344,7 +345,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_subscribers_input_validation() {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -399,7 +400,7 @@ mod tests {
         subscriptions: Vec<SubscriptionRequest>,
         expected_count: usize,
     ) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(subscriptions.len());
@@ -427,7 +428,7 @@ mod tests {
     #[test_case(Request::Subscriber(SubscriberInfo::default()); "Default Request:Susbcriber SusbcriberInfo")]
     #[tokio::test]
     async fn test_fetch_subscriptions_input_validation(request: Request) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(0);
@@ -525,7 +526,7 @@ mod tests {
         request: Request,
         expected_count: usize,
     ) {
-        test_lib::before_test();
+        helpers::init_once();
 
         // Prepare things
         let usubscription = test_lib::mocks::usubscription_default_mock(subscriptions.len());

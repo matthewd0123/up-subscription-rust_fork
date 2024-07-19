@@ -6,14 +6,15 @@ uSubscription service written in Rust
 
 This codebase is heavily work in progress - among the next things to do and investigate:
 
-- [] extend test coverage, especially for the backend subscription management and notification handler
-- [] handling of startup and proper shutdown for usubscription service
-- [] look into recent up-rust changes around Rpc and UTransport implementations, and whether we can use something from there
-- [] add github CI pipeline setup
-- [] create a usubscription-cli module, a simple command-line frontend for running up-subscription
-- [] create a little demo application for interacting with up-subscription
-- [] set up a devcontainer
-- [] feed back learnings and clarifications into up-spec usubscription documentation
+- [x] extend test coverage, especially for the backend subscription management and notification handler
+- [ ] make size of command channels bounded and (probably) configurable
+- [ ] handling of startup and proper shutdown for usubscription service
+- [ ] look into recent up-rust changes around Rpc and UTransport implementations, and whether we can  use something from there
+- [ ] add github CI pipeline setup
+- [ ] create a usubscription-cli module, a simple command-line frontend for running up-subscription
+- [ ] create a little demo application for interacting with up-subscription
+- [ ] set up a devcontainer
+- [ ] feed back learnings and clarifications into up-spec usubscription documentation
 
 ## Implementation questions
 

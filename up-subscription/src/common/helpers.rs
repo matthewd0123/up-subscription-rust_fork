@@ -13,7 +13,14 @@
 
 use log::*;
 use std::future::Future;
+use std::sync::Once;
 use tokio::task;
+
+static INIT: Once = Once::new();
+
+pub(crate) fn init_once() {
+    INIT.call_once(env_logger::init);
+}
 
 type SpawnResult<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub(crate) fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>

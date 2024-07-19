@@ -11,15 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use std::sync::Once;
-
 use up_rust::{communication::CallOptions, UMessage};
-
-static INIT: Once = Once::new();
-
-pub(crate) fn before_test() {
-    INIT.call_once(env_logger::init);
-}
 
 // This determines whether two UMessages are equivalent - meaning, whether they have the same
 // properties and content EXCEPT for the message IDs.

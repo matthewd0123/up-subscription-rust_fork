@@ -11,7 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-mod common;
+mod common {
+    pub(crate) mod helpers;
+}
 pub(crate) use common::*;
 
 mod notification_manager;

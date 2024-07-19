@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 use up_rust::core::usubscription::{SubscriberInfo, SubscriptionStatus, Update};
 use up_rust::{UMessageBuilder, UTransport, UUri, UUID};
 
-use crate::usubscription;
+use crate::{helpers, usubscription};
 
 // This is the core business logic for tracking and sending subscription update notifications. It is currently implemented as a single
 // event-consuming function `notification_engine()`, which is supposed to be spawned into a task, and process the various notification
@@ -65,6 +65,8 @@ pub(crate) async fn notification_engine(
     up_transport: Arc<dyn UTransport>,
     mut events: UnboundedReceiver<NotificationEvent>,
 ) {
+    helpers::init_once();
+
     // keep track of which subscriber wants to be notified on which topic
     #[allow(clippy::mutable_key_type)]
     let mut notification_topics: HashMap<UUri, UUri> = HashMap::new();
