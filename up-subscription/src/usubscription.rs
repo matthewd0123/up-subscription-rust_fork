@@ -19,7 +19,7 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::usubscription_notification::{self, Event};
+use crate::usubscription_notification::{self, NotificationEvent};
 use crate::{
     helpers,
     usubscription_manager::{self, SubscriptionEvent},
@@ -73,7 +73,7 @@ pub struct USubscriptionService {
 
     pub(crate) up_transport: Arc<dyn UTransport>,
     subscription_sender: UnboundedSender<SubscriptionEvent>,
-    notification_sender: UnboundedSender<usubscription_notification::Event>,
+    notification_sender: UnboundedSender<usubscription_notification::NotificationEvent>,
 }
 
 /// Implementation of uProtocol L3 USubscription service
@@ -113,7 +113,7 @@ impl USubscriptionService {
         // Set up notification service actor
         let up_transport_cloned = up_transport.clone();
         let (notification_sender, notification_receiver) =
-            mpsc::unbounded_channel::<usubscription_notification::Event>();
+            mpsc::unbounded_channel::<usubscription_notification::NotificationEvent>();
         helpers::spawn_and_log_error(async move {
             usubscription_notification::notification_engine(
                 up_transport_cloned,
@@ -196,13 +196,22 @@ impl USubscription for USubscriptionService {
         };
 
         // Notify update channel
-        if let Err(e) = self.notification_sender.send(Event::StateChange {
-            subscriber,
-            topic: topic.clone(),
-            status: status.clone(),
-        }) {
+        let (respond_to, receive_from) = oneshot::channel::<()>();
+        if let Err(e) = self
+            .notification_sender
+            .send(NotificationEvent::StateChange {
+                subscriber,
+                topic: topic.clone(),
+                status: status.clone(),
+                respond_to,
+            })
+        {
             error!("Error initiating subscription-change update notification: {e}");
         }
+        if let Err(e) = receive_from.await {
+            // Not returning an error here, as update notification is not a core concern wrt the actual subscription management
+            error!("Error sending subscription-change update notification: {e}");
+        };
 
         // Build and return result
         Ok(SubscriptionResponse {
@@ -269,14 +278,23 @@ impl USubscription for USubscriptionService {
         };
 
         // Notify update channel
-        if let Err(e) = self.notification_sender.send(Event::StateChange {
-            subscriber,
-            topic: topic.clone(),
-            status: status.clone(),
-        }) {
+        let (respond_to, receive_from) = oneshot::channel::<()>();
+        if let Err(e) = self
+            .notification_sender
+            .send(NotificationEvent::StateChange {
+                subscriber,
+                topic: topic.clone(),
+                status: status.clone(),
+                respond_to,
+            })
+        {
             // Not returning an error here, as update notification is not a core concern wrt the actual subscription management
             error!("Error initiating subscription-change update notification: {e}");
         }
+        if let Err(e) = receive_from.await {
+            // Not returning an error here, as update notification is not a core concern wrt the actual subscription management
+            error!("Error sending subscription-change update notification: {e}");
+        };
 
         // Return result
         Ok(())
@@ -345,10 +363,13 @@ impl USubscription for USubscriptionService {
         );
 
         // Perform notification management
-        if let Err(e) = self.notification_sender.send(Event::AddNotifyee {
-            subscriber: subscriber_uri,
-            topic,
-        }) {
+        if let Err(e) = self
+            .notification_sender
+            .send(NotificationEvent::AddNotifyee {
+                subscriber: subscriber_uri,
+                topic,
+            })
+        {
             return Err(UStatus::fail_with_code(
                 UCode::INTERNAL,
                 format!("Failed to update notification settings: {e}"),
@@ -398,9 +419,12 @@ impl USubscription for USubscriptionService {
         );
 
         // Perform notification management
-        if let Err(e) = self.notification_sender.send(Event::RemoveNotifyee {
-            subscriber: subscriber_uri,
-        }) {
+        if let Err(e) = self
+            .notification_sender
+            .send(NotificationEvent::RemoveNotifyee {
+                subscriber: subscriber_uri,
+            })
+        {
             return Err(UStatus::fail_with_code(
                 UCode::INTERNAL,
                 format!("Failed to update notification settings: {e}"),

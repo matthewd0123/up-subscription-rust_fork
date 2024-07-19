@@ -231,13 +231,13 @@ pub(crate) mod mocks {
     }
 
     pub(crate) fn usubscription_default_mock(do_send_count: usize) -> USubscriptionService {
-        let mut mock_transport = test_lib::mocks::MockTransport::default();
+        let mut mock_transport = MockTransport::default();
         mock_transport
             .expect_do_send()
             .times(do_send_count)
             .return_const(Ok(()));
 
-        let mock_client = test_lib::mocks::MockRpcClientMock::default();
+        let mock_client = MockRpcClientMock::default();
         USubscriptionService::new(
             None,
             test_lib::helpers::local_usubscription_service_uri(),
@@ -272,6 +272,22 @@ pub(crate) mod mocks {
         let (sender, receiver) = mpsc::channel::<NotificationTuple>(1);
         let mock_transport: NotificationTransportMock = NotificationTransportMock::new(sender);
         (mock_transport, receiver)
+    }
+
+    pub(crate) fn utransport_mock_for_notification_manager(
+        expected_messages: Vec<UMessage>,
+    ) -> MockTransport {
+        let mut mock_transport = MockTransport::default();
+
+        for expected_message in expected_messages {
+            mock_transport
+                .expect_do_send()
+                .once()
+                .withf(move |message| test_lib::is_equivalent_umessage(message, &expected_message))
+                .return_const(Ok(()));
+        }
+
+        mock_transport
     }
 }
 
@@ -308,6 +324,10 @@ pub(crate) mod helpers {
     const TOPIC_LOCAL2_ID: u32 = 0x0020_0000;
     const TOPIC_LOCAL2_VERSION: u32 = 0x0000_0001;
     const TOPIC_LOCAL2_RESOURCE: u32 = 0x0153_158E;
+
+    const TOPIC_LOCAL3_ID: u32 = 0x0030_0000;
+    const TOPIC_LOCAL3_VERSION: u32 = 0x0000_0001;
+    const TOPIC_LOCAL3_RESOURCE: u32 = 0x01FC_A055;
 
     const TOPIC_REMOTE1_ID: u32 = 0x0000_5000;
     const TOPIC_REMOTE1_VERSION: u32 = 0x0000_0001;
@@ -392,6 +412,16 @@ pub(crate) mod helpers {
             ue_id: TOPIC_LOCAL2_ID,
             ue_version_major: TOPIC_LOCAL2_VERSION,
             resource_id: TOPIC_LOCAL2_RESOURCE,
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn local_topic3_uri() -> UUri {
+        UUri {
+            authority_name: String::default(),
+            ue_id: TOPIC_LOCAL3_ID,
+            ue_version_major: TOPIC_LOCAL3_VERSION,
+            resource_id: TOPIC_LOCAL3_RESOURCE,
             ..Default::default()
         }
     }
