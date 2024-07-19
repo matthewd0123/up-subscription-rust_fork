@@ -11,178 +11,24 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use log::*;
-use std::collections::HashMap;
-use std::str::FromStr;
-use std::sync::Arc;
-use tokio::sync::mpsc::UnboundedReceiver;
-use tokio::sync::oneshot;
-
-use up_rust::core::usubscription::{SubscriberInfo, SubscriptionStatus, Update};
-use up_rust::{UMessageBuilder, UTransport, UUri, UUID};
-
-use crate::usubscription;
-
-// This is the core business logic for tracking and sending subscription update notifications. It is currently implemented as a single
-// event-consuming function `notification_engine()`, which is supposed to be spawned into a task, and process the various notification
-// `Events` that it can receive via tokio mpsc channel.
-
-// This is my interpretation of the new-UUri version of what the proto definition says (up:/core.usubscription/3/subscriptions#Update)
-const UP_NOTIFICATION_CHANNEL: &str = "up:/0/3/8000";
-
-// This is the 'outside API' of notification handler
-#[derive(Debug)]
-pub(crate) enum NotificationEvent {
-    AddNotifyee {
-        subscriber: UUri,
-        topic: UUri,
-    },
-    RemoveNotifyee {
-        subscriber: UUri,
-    },
-    StateChange {
-        subscriber: SubscriberInfo,
-        topic: UUri,
-        status: SubscriptionStatus,
-        respond_to: oneshot::Sender<()>,
-    },
-    // Purely for use during testing: get copy of current notifyee ledger
-    #[cfg(test)]
-    GetNotificationTopics {
-        respond_to: oneshot::Sender<HashMap<UUri, UUri>>,
-    },
-    // Purely for use during testing: force-set new notifyees ledger
-    #[cfg(test)]
-    SetNotificationTopics {
-        notification_topics_replacement: HashMap<UUri, UUri>,
-        respond_to: oneshot::Sender<()>,
-    },
-}
-
-// Keeps track of and sends subscription update notification to all registered update-notification channels.
-// Interfacing with this purely works via channels.
-pub(crate) async fn notification_engine(
-    up_transport: Arc<dyn UTransport>,
-    mut events: UnboundedReceiver<NotificationEvent>,
-) {
-    // keep track of which subscriber wants to be notified on which topic
-    #[allow(clippy::mutable_key_type)]
-    let mut notification_topics: HashMap<UUri, UUri> = HashMap::new();
-
-    loop {
-        let event = tokio::select! {
-            event = events.recv() => match event {
-                None => break,
-                Some(event) => event,
-            },
-        };
-        match event {
-            NotificationEvent::AddNotifyee { subscriber, topic } => {
-                if topic.is_event() {
-                    notification_topics.insert(subscriber, topic);
-                } else {
-                    error!("Topic UUri is not a valid event target");
-                }
-            }
-            NotificationEvent::RemoveNotifyee { subscriber } => {
-                notification_topics.remove(&subscriber);
-            }
-            NotificationEvent::StateChange {
-                subscriber,
-                topic,
-                status,
-                respond_to,
-            } => {
-                let update = Update {
-                    topic: Some(topic).into(),
-                    subscriber: Some(subscriber.clone()).into(),
-                    status: Some(status).into(),
-                    ..Default::default()
-                };
-
-                // Send Update message to general notification channel
-                // as per usubscription.proto RegisterForNotifications(NotificationsRequest)
-                match UMessageBuilder::publish(
-                    UUri::from_str(UP_NOTIFICATION_CHANNEL)
-                        .expect("This really should have worked"),
-                )
-                .with_message_id(UUID::build())
-                .build_with_protobuf_payload(&update)
-                {
-                    Err(e) => {
-                        error!("Error building global update notification message: {e}");
-                    }
-                    Ok(update_msg) => {
-                        if let Err(e) = up_transport.send(update_msg).await {
-                            error!(
-                                "Error sending global subscription-change update notification: {e}"
-                            );
-                        }
-                    }
-                }
-
-                // Send Update message to any dedicated registered notification-subscribers
-                for notification_topic in notification_topics.values() {
-                    debug!(
-                        "Sending notification to ({}): topic {}, subscriber {}, status {}",
-                        notification_topic.to_uri(usubscription::INCLUDE_SCHEMA),
-                        update
-                            .topic
-                            .as_ref()
-                            .unwrap_or_default()
-                            .to_uri(usubscription::INCLUDE_SCHEMA),
-                        update
-                            .subscriber
-                            .uri
-                            .as_ref()
-                            .unwrap_or_default()
-                            .to_uri(usubscription::INCLUDE_SCHEMA),
-                        update.status.as_ref().unwrap_or_default()
-                    );
-                    match UMessageBuilder::publish(notification_topic.clone())
-                        .with_message_id(UUID::build())
-                        .build_with_protobuf_payload(&update)
-                    {
-                        Err(e) => {
-                            error!("Error building susbcriber-specific update notification message: {e}");
-                        }
-                        Ok(update_msg) => {
-                            if let Err(e) = up_transport.send(update_msg).await {
-                                error!(
-                                    "Error sending susbcriber-specific subscription-change update notification: {e}"
-                                );
-                            }
-                        }
-                    }
-                }
-                let _r = respond_to.send(());
-            }
-            #[cfg(test)]
-            NotificationEvent::GetNotificationTopics { respond_to } => {
-                let _r = respond_to.send(notification_topics.clone());
-            }
-            #[cfg(test)]
-            NotificationEvent::SetNotificationTopics {
-                notification_topics_replacement,
-                respond_to,
-            } => {
-                notification_topics = notification_topics_replacement;
-                let _r = respond_to.send(());
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashMap;
     use std::error::Error;
-    use tokio::sync::mpsc::{self, UnboundedSender};
-    use up_rust::core::usubscription::State;
-    use up_rust::UMessage;
+    use std::str::FromStr;
+    use std::sync::Arc;
+    use tokio::sync::{
+        mpsc::{self, UnboundedSender},
+        oneshot,
+    };
 
-    use crate::helpers;
-    use crate::test_lib;
+    use up_rust::core::usubscription::{State, SubscriberInfo, SubscriptionStatus, Update};
+    use up_rust::{UMessage, UMessageBuilder, UUri, UUID};
+
+    use crate::notification_manager::{
+        notification_engine, NotificationEvent, UP_NOTIFICATION_CHANNEL,
+    };
+    use crate::{helpers, test_lib};
 
     // Simple subscription-manager-actor front-end to use for testing
     struct CommandSender {

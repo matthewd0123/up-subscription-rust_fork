@@ -19,10 +19,10 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::usubscription_notification::{self, NotificationEvent};
+use crate::notification_manager::{self, NotificationEvent};
 use crate::{
     helpers,
-    usubscription_manager::{self, SubscriptionEvent},
+    subscription_manager::{self, SubscriptionEvent},
 };
 
 use up_rust::core::usubscription::{
@@ -73,7 +73,7 @@ pub struct USubscriptionService {
 
     pub(crate) up_transport: Arc<dyn UTransport>,
     subscription_sender: UnboundedSender<SubscriptionEvent>,
-    notification_sender: UnboundedSender<usubscription_notification::NotificationEvent>,
+    notification_sender: UnboundedSender<notification_manager::NotificationEvent>,
 }
 
 /// Implementation of uProtocol L3 USubscription service
@@ -101,7 +101,7 @@ impl USubscriptionService {
         let (subscription_sender, subscription_receiver) =
             mpsc::unbounded_channel::<SubscriptionEvent>();
         helpers::spawn_and_log_error(async move {
-            usubscription_manager::handle_message(
+            subscription_manager::handle_message(
                 own_uri_cloned,
                 up_client_cloned,
                 subscription_receiver,
@@ -113,13 +113,10 @@ impl USubscriptionService {
         // Set up notification service actor
         let up_transport_cloned = up_transport.clone();
         let (notification_sender, notification_receiver) =
-            mpsc::unbounded_channel::<usubscription_notification::NotificationEvent>();
+            mpsc::unbounded_channel::<notification_manager::NotificationEvent>();
         helpers::spawn_and_log_error(async move {
-            usubscription_notification::notification_engine(
-                up_transport_cloned,
-                notification_receiver,
-            )
-            .await;
+            notification_manager::notification_engine(up_transport_cloned, notification_receiver)
+                .await;
             Ok(())
         });
 

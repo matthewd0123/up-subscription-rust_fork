@@ -14,8 +14,8 @@
 mod common;
 pub(crate) use common::*;
 
-mod usubscription_manager;
-mod usubscription_notification;
+mod notification_manager;
+mod subscription_manager;
 
 mod usubscription;
 mod usubscription_uris;

@@ -33,10 +33,10 @@ mod tests {
         UCode, UPriority, UStatus, UUri, UUID,
     };
 
-    use crate::usubscription::UP_REMOTE_TTL;
-    use crate::usubscription_manager::{
+    use crate::subscription_manager::{
         handle_message, make_remote_subscribe_uuri, make_remote_unsubscribe_uuri, SubscriptionEvent,
     };
+    use crate::usubscription::UP_REMOTE_TTL;
     use crate::{helpers, test_lib};
 
     // Simple subscription-manager-actor front-end to use for testing
