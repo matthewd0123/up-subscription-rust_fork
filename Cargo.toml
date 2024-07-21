@@ -15,6 +15,7 @@
 resolver = "2"
 members = [
     "up-subscription",
+    "up-subscription-plugin"
     #    "up-subscription-cli",
 ]
 

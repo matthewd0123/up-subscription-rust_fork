@@ -48,6 +48,9 @@ pub trait USubscriptionServiceAbstract:
 {
 }
 
+// implement SubscriptionServiceAbstract
+impl USubscriptionServiceAbstract for USubscriptionService {}
+
 /// This trait primarily serves to provide a hook-point for using the mockall crate, for mocking USubscriptionService objects
 /// where we also need/want to inject custom/mock UTransport implementations that subsequently get used in test cases.
 pub trait UTransportHolder {

@@ -1,0 +1,23 @@
+[package]
+name = "up-subscription-plugin"
+description.workspace = true
+documentation.workspace = true
+edition.workspace = true
+exclude.workspace = true
+keywords.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.35.1", default-features = false }
+up-rust = { version = "0.1.2", features = ["usubscription"] }
+utransport-socket = {path = "../up_client_socket/rust/utransport-socket"}
+up-subscription = {path = "../up-subscription"}
+env_logger = "0.10.2"
+log = "0.4.21"
+async-trait = "0.1.80"
+protobuf = { version = "3.3", features = ["with-bytes"] }
