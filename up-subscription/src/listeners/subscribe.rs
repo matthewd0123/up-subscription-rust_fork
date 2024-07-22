@@ -35,6 +35,8 @@ impl UListener for SubscribeListener {
     // Perform any business logic related to a `SubscriptionRequest`
     // Implements https://github.com/eclipse-uprotocol/up-spec/tree/main/up-l3/usubscription/v3#51-subscription
     async fn on_receive(&self, msg: UMessage) {
+        println!("neelam - subscription request received");
+
         let subscription_request: SubscriptionRequest = msg
             .extract_protobuf()
             .expect("Expected SubscriptionRequest payload");
@@ -46,12 +48,14 @@ impl UListener for SubscribeListener {
             .await
         {
             Ok(response) => {
+
                 // Success as well as failure status passed through into response message...
                 UMessageBuilder::response_for_request(msg.attributes.get_or_default())
-                    .with_comm_status(UCode::OK)
+                    // .with_comm_status(UCode::OK)
                     .with_message_id(UUID::build())
                     .build_with_protobuf_payload(&response)
                     .expect("Error building response message")
+
             }
             Err(status) => UMessageBuilder::response_for_request(msg.attributes.get_or_default())
                 .with_message_id(UUID::build())
@@ -59,13 +63,16 @@ impl UListener for SubscribeListener {
                 .build_with_protobuf_payload(&status)
                 .expect("Error building response message"),
         };
-
+        println!("NEELAM- Response message created by subscription service");
+       
         // 2. Respond to caller
         self.up_subscription
             .get_transport()
             .send(message)
             .await
             .expect("Error sending response message");
+        println!("NEELAM- Response message sent by subscription service");
+
     }
 }
 

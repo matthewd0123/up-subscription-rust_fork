@@ -29,7 +29,7 @@ use up_subscription::listeners::subscribe::SubscribeListener;
 use up_subscription::listeners::unregister_for_notifications::UnregisterForNotificationsListener;
 use up_subscription::listeners::unsubscribe::UnsubscribeListener;
 use up_subscription::USubscriptionService;
-use utransport_socket::UTransportSocket;
+use up_transport_socket::UTransportSocket;
 
 fn any_uuri_val() -> UUri {
     UUri {
@@ -43,7 +43,6 @@ fn any_uuri_val() -> UUri {
 
 fn subscribe_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 1,
         ue_id: 0,
         ue_version_major: 3,
@@ -53,7 +52,6 @@ fn subscribe_uri_val() -> UUri {
 
 fn unsubscribe_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 2,
         ue_id: 0,
         ue_version_major: 3,
@@ -63,7 +61,6 @@ fn unsubscribe_uri_val() -> UUri {
 
 fn fetch_subscriptions_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 3,
         ue_id: 0,
         ue_version_major: 3,
@@ -73,7 +70,6 @@ fn fetch_subscriptions_uri_val() -> UUri {
 
 fn fetch_subscribers_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 8,
         ue_id: 0,
         ue_version_major: 3,
@@ -83,7 +79,6 @@ fn fetch_subscribers_uri_val() -> UUri {
 
 fn register_for_notifications_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 6,
         ue_id: 0,
         ue_version_major: 3,
@@ -93,7 +88,6 @@ fn register_for_notifications_uri_val() -> UUri {
 
 fn unregister_for_notifications_uri_val() -> UUri {
     UUri {
-        authority_name: "core.usubscription".to_string(),
         resource_id: 7,
         ue_id: 0,
         ue_version_major: 3,
@@ -133,6 +127,7 @@ async fn main() {
 
     let transport_result = UTransportSocket::new();
     let transport = Arc::new(transport_result.expect("Failed to create UTransportSocket"));
+    println!("Transport initialized");
 
     let local_uri_provider = Arc::new(SubscriptionRpcClientUriProvider::new(own_uuri.clone()));
 
@@ -148,6 +143,7 @@ async fn main() {
         transport.clone(),
         rpc_client,
     ));
+    println!("usubscription initialized");
 
     let subscribe_listener = Arc::new(SubscribeListener::new(usubscription.clone()));
     let unsubscribe_listener = Arc::new(UnsubscribeListener::new(usubscription.clone()));
@@ -161,6 +157,7 @@ async fn main() {
     ));
 
     let _ = transport.register_listener(&any_uuri_val(), Some(&subscribe_uri_val()), subscribe_listener).await;
+    
     let _ = transport.register_listener(&any_uuri_val(), Some(&unsubscribe_uri_val()), unsubscribe_listener).await;
     let _ = transport.register_listener(
         &any_uuri_val(),
@@ -183,5 +180,7 @@ async fn main() {
         unregister_for_notifications_listener,
     ).await;
 
-    println!("Hello, world!");
+    println!("Subscription service is running!");
+     // Keep the main function alive to let the background tasks complete
+     tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl-c signal");
 }
